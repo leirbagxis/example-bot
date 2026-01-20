@@ -1,0 +1,76 @@
+package api
+
+import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/go-telegram/bot"
+	"github.com/leirbagxis/example-bot/internal/api/routes"
+	"github.com/leirbagxis/example-bot/internal/database"
+	"github.com/leirbagxis/example-bot/internal/utils"
+	"github.com/leirbagxis/example-bot/pkg/config"
+	"gorm.io/gorm"
+)
+
+func StartApi(db *gorm.DB, webhookHandler http.Handler, botInstance *bot.Bot) error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	app := database.NewAppContainer(db, botInstance)
+	router := gin.New()
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Telegram-Init-Data"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	routes.RegisterRoutes(router, app)
+
+	// Rota de Webhook real (usa handler do bot)
+	if config.WebhookURL != "" && webhookHandler != nil {
+		log.Println("🔗 Registrando endpoint do webhook")
+		router.POST("/webhook", gin.WrapH(webhookHandler))
+	}
+
+	router.Static("/assets", "./webapp/assets")
+	router.GET("/dashboard/:channelID", func(c *gin.Context) {
+		c.File("./webapp/index.html")
+	})
+
+	router.GET("/plans", func(c *gin.Context) {
+		c.File("./webapp/index.html")
+	})
+
+	router.GET("/admin/dash", func(c *gin.Context) {
+		c.File("./webapp/index.html")
+	})
+
+	port := utils.NormalizePort(config.AppPort)
+
+	srv := &http.Server{
+		Addr:    port,
+		Handler: router,
+	}
+
+	go func() {
+		log.Printf("🌐 API REST rodando em http://localhost:%s", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Erro ao iniciar servidor: %v", err)
+		}
+	}()
+
+	<-ctx.Done()
+	log.Println("🔻 Encerrando API...")
+
+	return srv.Shutdown(context.Background())
+}

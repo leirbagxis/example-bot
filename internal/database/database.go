@@ -1,0 +1,26 @@
+package database
+
+import (
+	"github.com/glebarez/sqlite"
+	"github.com/leirbagxis/example-bot/internal/database/models"
+	"github.com/leirbagxis/example-bot/pkg/config"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+)
+
+func InitDB() *gorm.DB {
+	db, err := gorm.Open(sqlite.Open(config.DatabaseFile), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+	db.Config.Logger = logger.Default.LogMode(logger.Silent)
+
+	err = db.AutoMigrate(
+		&models.User{},
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	return db
+}

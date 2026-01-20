@@ -1,0 +1,30 @@
+- name: start
+  type: command
+  text: |
+    <b>👋 Olá, {firstName}!</b>
+    
+    🤖 Eu estou aqui para automatizar as descrições das suas postagens no Canal!
+    
+    ✨ Com o sistema de <b>Legendas Inteligentes</b>, suas publicações sempre terão descrições personalizadas e organizadas.
+    
+    📖 Consulte a aba  Como Usar para aprender a configurar tudo rapidamente!
+  buttons:
+    - - text: "ℹ️ Sobre"
+        callback_data: "about"
+
+- name: about
+  text: |
+    <b>ℹ️ Sobre o Bot</b>
+    
+    <blockquote>📌 <b>Versão:</b> <i>{botVersion}</i>
+    ⚙️ <b>Desenvolvido Por:</b> <i>{ownerUser}</i></blockquote>
+    
+    
+    🚀 Este bot foi criado para facilitar a adição de <b>legendas automáticas</b> em postagens de canais, tornando a gestão de conteúdo mais eficiente e dinâmica.
+    
+    📢 Para aprender a configurar, consulte a aba <a href='tg://user?id={botId}'>Ajuda</a>!"
+  buttons:
+    - - text: "🏠 Início"
+        callback_data: "start"
+      - text: "❓ Ajuda"
+        callback_data: "help"
